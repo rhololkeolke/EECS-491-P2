@@ -10,10 +10,6 @@ import edu.cwru.sepia.agent.mock.LearningUnit;
 
 public class Factor {
 	
-	private LearningUnit max;
-	private LearningUnit agent;
-	private Factor f;
-	
 	private List<Tuple<TargetedAction, Double>> JTable;
 
 	// for now this method assumes that there will be at most 2 edges for every node in the graph
@@ -27,11 +23,11 @@ public class Factor {
 		// get the J values of all the possible actions for the agent
 		List<Tuple<TargetedAction, Double>> agentJTable = agent.calcJTable(s, h, playernum);
 
-		List<Tuple<TargetedAction, Double>> intermediateTable1 = constructIntermediateTable(maxJTable, agentJTable);
+		List<Tuple<TargetedAction, Double>> intermediateTable1 = constructJointTable(maxJTable, agentJTable);
 		
-		List<Tuple<TargetedAction, Double>> intermediateTable2 = constructIntermediateTable(maxJTable, f.getJTable());
+		List<Tuple<TargetedAction, Double>> intermediateTable2 = constructJointTable(maxJTable, f.getJTable());
 		
-		List<Tuple<TargetedAction, Double>> jointActionTable = constructJointActionTable(maxJTable.size(), intermediateTable1, intermediateTable2);
+		List<Tuple<TargetedAction, Double>> jointActionTable = constructJointTable(intermediateTable1, intermediateTable2);
 		
 		JTable = compressJointActionTable(maxJTable.size(), 2, jointActionTable);
 
@@ -46,7 +42,7 @@ public class Factor {
 		// get the J values for all the possible actions for the agent
 		List<Tuple<TargetedAction, Double>> agentJTable = agent.calcJTable(s, h, playernum);
 		
-		List<Tuple<TargetedAction, Double>> intermediateTable = constructIntermediateTable(maxJTable, agentJTable);
+		List<Tuple<TargetedAction, Double>> intermediateTable = constructJointTable(maxJTable, agentJTable);
 		
 		JTable = compressJointActionTable(maxJTable.size(), 1, intermediateTable);
 	}
@@ -74,100 +70,36 @@ public class Factor {
      * and a2 will be whichever agent in agents is currently being
      * processed
      */		
-	private List<Tuple<TargetedAction, Double>> constructIntermediateTable(List<Tuple<TargetedAction, Double>> a1JTable,
-			                                                           List<Tuple<TargetedAction, Double>> a2JTable)
+	private List<Tuple<TargetedAction, Double>> constructJointTable(List<Tuple<TargetedAction, Double>> maxTable,
+				List<Tuple<TargetedAction, Double>> otherTable)
 	{
-	
-		int numActions = a1JTable.size();
+		int numActions1 = maxTable.size(); // number of actions in the max table
+		int numActions2 = otherTable.size(); // number of actions in the other table
+		Double[] jVals = new Double[numActions1*numActions2]; // stores the sum of the J values from the max table and other table
+		TargetedAction[] actions = new TargetedAction[numActions1*numActions2]; // stores the actions from the max table
 		
-		// the number of actions in the intermediate table with two agents
-		// is the square of the number of actions (assuming that each agent
-		// has the same number of actions)
-		List<Tuple<TargetedAction, Double>> intermediateTable = new ArrayList<Tuple<TargetedAction, Double>>(numActions*numActions);
-		
-		Double[] jVals = new Double[numActions*numActions];
-		TargetedAction[] actions = new TargetedAction[numActions*numActions];
-		
-		// think of these loops as constructing a truth table except
-		// now there may be more than actions for each agent
-		// (i.e. no longer just True and False)
-		for(int i=0; i<a1JTable.size(); i++) 
+		// construct the permutations and their associated
+		for(int i=0; i<numActions1; i++)
 		{
-			Tuple<TargetedAction, Double> maxJVal = a1JTable.get(i); // convenience variable which saves some typing
-			for(int j=0; j<a2JTable.size(); j++)
+			Tuple<TargetedAction, Double> maxElement = maxTable.get(i); // convenience variable which saves some typing
+			for(int j=0; j<numActions2; j++)
 			{
 				// get the index into the intermediate table
-				int index = i*numActions + j;
-				jVals[index] = maxJVal.second + a2JTable.get(j).second;
-				actions[index] = a1JTable.get(i).first;
+				int index = i*numActions1 + j;
+				jVals[index] = maxElement.second + otherTable.get(j).second;
+				actions[index] = maxElement.first;
 			}
 		}
 		
+		List<Tuple<TargetedAction, Double>> jointTable = new ArrayList<Tuple<TargetedAction, Double>>(jVals.length);
+		
+		// convert the two arrays into a list of tuples
 		for(int i=0; i<jVals.length; i++)
 		{
-			intermediateTable.add(new Tuple<TargetedAction, Double>(actions[i], jVals[i]));
+			jointTable.add(new Tuple<TargetedAction, Double>(actions[i], jVals[i]));
 		}
 		
-		return intermediateTable;
-	}
-	
-	public List<Tuple<TargetedAction, Double>> getJTable()
-	{
-		return JTable;
-	}
-
-	/*
-	 * Takes in two intermediate tables and combines them into a single table
-	 * 
-	 * For instance an intermediate table for a1, a2 and an intermediate table for
-	 * a1 and a3 are combined to look like the following
-	 * 
-	 * +==+==+==+=+
-	 * |a1|a2|a3|J|
-	 * +==+==+==+=+
-	 * |A0|A0|A0|3|
-	 * +--+--+--+-+
-	 * |A0|A0|A1|7|
-	 * +--+--+--+-+
-	 * |..........|
-	 * +--+--+--+-+
-	 * |A1|A1|A0|2|
-	 * +--+--+--+-+
-	 * |A1|A1|A1|9|
-	 * +--+--+--+-+
-	 * 
-	 * However, only the J value of each row is stored.
-	 * The rest of the information can be reconstructed from the index
-	 * of J.
-	 */
-	private List<Tuple<TargetedAction, Double>> constructJointActionTable(int numActions,
-			                                   List<Tuple<TargetedAction, Double>> table1,
-			                                   List<Tuple<TargetedAction, Double>> table2)
-	{
-		Double[] JVals = new Double[numActions*numActions*numActions];
-		TargetedAction[] actions = new TargetedAction[numActions*numActions*numActions];
-		
-		for(int i=0; i<table1.size(); i++)
-		{
-			for(int j=0; j<table2.size(); j++)
-			{
-				if(i/numActions == j/numActions)
-				{
-					// the index is essentially like converting from a number in the base of Action to a number in decimal
-					int index = (i/numActions)*numActions*numActions + (i % numActions)*numActions + (i % numActions);
-					JVals[index] = table1.get(i).second + table2.get(j).second;
-					actions[index] = table1.get(i).first;
-				}
-			}
-		}
-		
-		List<Tuple<TargetedAction, Double>> jointJTable = new ArrayList<Tuple<TargetedAction, Double>>(JVals.length);
-		for(int i=0; i<JVals.length; i++)
-		{
-			TargetedAction action = actions[i];
-			jointJTable.add(new Tuple<TargetedAction, Double>(actions[i], JVals[i]));
-		}
-		return jointJTable;
+		return jointTable;
 	}
 	
 	/*
@@ -175,6 +107,7 @@ public class Factor {
 	 */
 	private List<Tuple<TargetedAction, Double>> compressJointActionTable(int numActions, int dim, List<Tuple<TargetedAction, Double>> finalActionTable)
 	{
+		// TODO Generalize this method so it works with different table sizes
 		Double[] JVals = new Double[numActions];
 		TargetedAction[] actions = new TargetedAction[numActions];
 		
@@ -202,6 +135,13 @@ public class Factor {
 		}
 		return finalJTable;
 	}
+	
+	public List<Tuple<TargetedAction, Double>> getJTable()
+	{
+		return JTable;
+	}
+	
+	
 	
 	public void update(Factor f)
 	{

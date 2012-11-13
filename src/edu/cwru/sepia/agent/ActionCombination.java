@@ -159,5 +159,10 @@ public class ActionCombination {
 		builder.append(" ");
 		return builder.toString();
 	}
+	
+	public TargetedAction get(Integer key)
+	{
+		return combination.get(key);
+	}
 
 }

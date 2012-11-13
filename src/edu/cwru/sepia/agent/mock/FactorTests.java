@@ -5,6 +5,7 @@ import java.util.List;
 
 import edu.cwru.sepia.agent.ActionCombination;
 import edu.cwru.sepia.agent.Factor;
+import edu.cwru.sepia.agent.LearningUnit;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 

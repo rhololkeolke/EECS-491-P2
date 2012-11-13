@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import edu.cwru.sepia.agent.mock.LearningUnit;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 
@@ -14,12 +13,6 @@ public class Factor {
 
 	JMap jmap;
 	Map<ActionCombination, ActionCombination> maxes = null;
-	
-	public Factor()
-	{
-		jmap = new JMap();
-		maxes = new HashMap<ActionCombination, ActionCombination>();
-	}
 	
 	public Factor(StateView s, HistoryView h, int playerNum, LearningUnit...agents)
 	{
@@ -114,6 +107,11 @@ public class Factor {
 		}
 	}
 	
+	public Factor()
+	{
+		jmap = new JMap();
+		maxes = new HashMap<ActionCombination, ActionCombination>();
+	}
 	
 	private List<ActionCombination> getCombinations(JMap agentJMap, List<ActionCombination> workingList)
 	{

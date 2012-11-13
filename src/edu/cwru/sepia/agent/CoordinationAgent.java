@@ -5,9 +5,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
@@ -32,6 +33,9 @@ public class CoordinationAgent extends Agent {
 	FileWriter fstream;
 	BufferedWriter out;
 	
+	// the agents
+	LearningUnit f1, f2, f3, a1, a2, b1, b2;
+	
 	public CoordinationAgent(int playernum, String[] args) throws IOException {
 		super(playernum);
 		units = new HashMap<Integer, LearningUnit>();
@@ -39,10 +43,15 @@ public class CoordinationAgent extends Agent {
 		fstream = new FileWriter("learningData.csv");
 		out = new BufferedWriter(fstream);
 		
-		if(args.length < 4)
-			numEpisodes = 50;
+		if(args.length < 5)
+		{
+			System.err.println("Must supply number of episodes and file path to coordination graph definition file");
+			System.exit(1);
+		}
 		else
+		{
 			numEpisodes = Integer.parseInt(args[3]);
+		}
 	}
 
 	@Override
@@ -63,6 +72,37 @@ public class CoordinationAgent extends Agent {
 		{
 			for(Integer unitId : newstate.getUnitIds(playernum))
 			{
+				switch(unitId)
+				{
+				case 6:
+					f1 = new LearningUnit(unitId);
+					units.put(unitId, f1);
+					break;
+				case 7:
+					f2 = new LearningUnit(unitId);
+					units.put(unitId, f2);
+					break;
+				case 8:
+					f3 = new LearningUnit(unitId);
+					units.put(unitId, f3);
+					break;
+				case 9:
+					a1 = new LearningUnit(unitId);
+					units.put(unitId, a1);
+					break;
+				case 10:
+					a2 = new LearningUnit(unitId);
+					units.put(unitId, a2);
+					break;
+				case 11:
+					b1 = new LearningUnit(unitId);
+					units.put(unitId, b1);
+					break;
+				case 12:
+					b2 = new LearningUnit(unitId);
+					units.put(unitId, b2);
+					break;
+				}
 				LearningUnit myunit = new LearningUnit(unitId);
 				units.put(unitId, myunit);
 			}
@@ -94,8 +134,12 @@ public class CoordinationAgent extends Agent {
 		if(isEvent())
 		{
 			
-			actions = getAction(newstate, statehistory);
-			return actions;
+			try {
+				return getAction(newstate, statehistory);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		else
 		{
@@ -103,7 +147,7 @@ public class CoordinationAgent extends Agent {
 			// continue to execute
 			return new HashMap<Integer, Action>(); 
 		}
-		
+		return null;
 	}
 
 	@Override
@@ -186,11 +230,149 @@ public class CoordinationAgent extends Agent {
 		return false;
 	}
 	
-	private Map<Integer, Action> getAction(StateView state, HistoryView history)
-	{
-		Integer[] keys = units.keySet().toArray(new Integer[10]);
-		//Factor f1 = new Factor(state, history, playernum, units.get(keys[0]), units.get(keys[1]));
+	private Map<Integer, Action> getAction(StateView state, HistoryView history) throws Exception
+	{	
+		List<Integer> unitIds = state.getUnitIds(playernum);
+		List<LearningUnit> agents = new ArrayList<LearningUnit>(2);
+		List<Factor> factors = new ArrayList<Factor>(1);
 		
-		return new HashMap<Integer, Action>();
+		Factor lastFactor = null;
+		Factor currFactor = null;
+		// max over f1
+		if(unitIds.contains(f1.unitId))
+		{
+			Factor factor1 = new Factor(state, history, playernum, f1, a1);
+			factor1 = factor1.max(f1.unitId);
+			
+			currFactor = factor1;
+		}
+		
+		// max over a1
+		factors.clear();
+		agents.clear();
+		if(currFactor != null)
+		{
+			factors.add(currFactor);
+			lastFactor = currFactor;
+			currFactor = null;
+		}
+		
+		if(unitIds.contains(a1.unitId) && unitIds.contains(b1.unitId))
+		{
+			agents.add(a1);
+			agents.add(b1);
+			
+			Factor factor2 = new Factor(state, history, playernum, agents, factors);
+			factor2 = factor2.max(a1.unitId);
+			
+			currFactor = factor2;
+		}
+			
+		// max over b1
+		factors.clear();
+		agents.clear();
+		if(currFactor != null)
+		{
+			factors.add(currFactor);
+			lastFactor = currFactor;
+			currFactor = null;
+		}
+		
+		if(unitIds.contains(b1.unitId) && unitIds.contains(f2.unitId))
+		{
+			agents.add(b1);
+			agents.add(f2);
+			
+			Factor factor3 = new Factor(state, history, playernum, agents, factors);
+			factor3 = factor3.max(b1.unitId);
+			
+			currFactor = factor3;
+		}
+		
+
+		// max over f2
+		factors.clear();
+		agents.clear();
+		if(currFactor != null)
+		{
+			factors.add(currFactor);
+			lastFactor = currFactor;
+			currFactor = null;
+		}
+		
+		if(unitIds.contains(f2.unitId) && unitIds.contains(b2.unitId))
+		{
+			agents.clear();
+			agents.add(f2);
+			agents.add(b2);
+			
+			Factor factor4 = new Factor(state, history, playernum, agents, factors);
+			factor4 = factor4.max(f2.unitId);
+			
+			currFactor = factor4;
+		}
+		
+		// max over b2
+		factors.clear();
+		agents.clear();
+		if(currFactor != null)
+		{
+			factors.add(currFactor);
+			lastFactor = currFactor;
+			currFactor = null;
+		}
+		
+		if(unitIds.contains(b2.unitId) && unitIds.contains(a2.unitId))
+		{
+			agents.add(b2);
+			agents.add(a2);
+			
+			Factor factor5 = new Factor(state, history, playernum, agents, factors);
+			factor5 = factor5.max(b2.unitId);
+			
+			currFactor = factor5;
+		}
+		
+		
+		
+		// max over a2
+		factors.clear();
+		agents.clear();
+		if(currFactor != null)
+		{
+			factors.add(currFactor);
+			lastFactor = currFactor;
+			currFactor = null;
+		}
+		
+		if(unitIds.contains(a2) && unitIds.contains(f3))
+		{
+			agents.add(a2);
+			agents.add(f3);
+			
+			Factor factor6 = new Factor(state, history, playernum, agents, factors);
+			factor6 = factor6.max(a2.unitId);
+			
+			currFactor = factor6;
+		}
+		
+		// max over f3
+
+		Map<Integer, Action> actionMap = new HashMap<Integer, Action>();
+		if(currFactor != null)
+		{
+			lastFactor = currFactor;
+		}
+		if(lastFactor != null)
+		{
+			ActionCombination maxActions = lastFactor.getMaxes();
+			
+			for(Integer unitId : maxActions.keySet())
+			{
+				actionMap.put(unitId, maxActions.get(unitId));
+			}
+		}
+		
+		return actionMap;
 	}
 }

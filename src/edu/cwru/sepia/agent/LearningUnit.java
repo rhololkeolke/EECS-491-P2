@@ -223,6 +223,9 @@ public class LearningUnit {
 			UnitView target = s.getUnit(targetID);
 			int currentID = a.getUnitId();
 			UnitView current = s.getUnit(currentID);
+			if(current == null || target == null)
+				return 0.0;
+			
 			int targetDistance = distance(current.getXPosition(), current.getYPosition(), target.getXPosition(), target.getYPosition());
 			int rank = 1;
 			
@@ -305,6 +308,9 @@ public class LearningUnit {
 		public double calculate(StateView s, HistoryView log, TargetedAction a, int playerNum) 
 		{
 			UnitView current = s.getUnit(a.getUnitId());
+			if(current == null)
+				return 0.0;
+			
 			int currentX = current.getXPosition();
 			int currentY = current.getYPosition();
 			
@@ -369,11 +375,14 @@ public class LearningUnit {
 			UnitView current = s.getUnit(a.getUnitId());
 			UnitView enemy = s.getUnit(a.getTargetId());
 			
+			if(current == null || enemy == null)
+				return 0.0;
+			
 			return ((double)current.getHP())/enemy.getHP();
 		}
 		
 	}
-	
+
 	//distance to closest ballista
 	private static class ClosestBallistaDistance implements Feature
 	{
@@ -382,6 +391,9 @@ public class LearningUnit {
 		public double calculate(StateView s, HistoryView log, TargetedAction a, int playerNum) 
 		{
 			UnitView current = s.getUnit(a.getUnitId());
+			if(current == null)
+				return 0.0;
+			
 			int currentX = current.getXPosition();
 			int currentY = current.getYPosition();
 			

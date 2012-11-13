@@ -1,15 +1,16 @@
 package edu.cwru.sepia.agent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.TargetedAction;
 import edu.cwru.sepia.environment.model.history.DamageLog;
 import edu.cwru.sepia.environment.model.history.DeathLog;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
-import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
@@ -112,10 +113,8 @@ public class LearningUnit {
 		reward = 0;
 	}
 	
-	public Action getAction(StateView s, HistoryView log, int playerNum)
+	public List<Tuple<TargetedAction, Double>> getActions(StateView s, HistoryView h, int playerNum)
 	{
-		TargetedAction chosenAction = null;
-		
 		List<Tuple<TargetedAction,Double>> actions = new LinkedList<Tuple<TargetedAction,Double>>();
 		double valueSum = 0;
 		for (Integer i:s.getPlayerNumbers())
@@ -125,18 +124,28 @@ public class LearningUnit {
 				for(UnitView enemy:s.getUnits(i))
 				{
 					TargetedAction act = (TargetedAction) TargetedAction.createCompoundAttack(unitId, enemy.getID());
-					double j = Math.exp((calcJ(s, log, act, playerNum)/temperature));
+					double j = Math.exp((calcJ(s, h, act, playerNum)/temperature));
 					Tuple<TargetedAction, Double> actValue = new Tuple<TargetedAction, Double>(act,j);
 					actions.add(actValue);
 					valueSum += j;
 				}
 			}
 		}
+		
 		for (Tuple<TargetedAction, Double> t:actions)
 		{
 			t.second = t.second/valueSum;
 		}
 		
+		return actions;
+	}
+	
+	public Action getAction(StateView s, HistoryView log, int playerNum)
+	{
+		TargetedAction chosenAction = null;
+		
+		List<Tuple<TargetedAction, Double>> actions = getActions(s, log, playerNum);
+
 		double rand = Math.random();
 		
 		for (Tuple<TargetedAction, Double> t:actions)
@@ -189,11 +198,18 @@ public class LearningUnit {
 		return j;
 	}
 	
-	public List<Tuple<TargetedAction, Double>> calcJTable(StateView s, HistoryView log, int playerNum)
+	public JMap calcJMap(StateView s, HistoryView log, int playerNum)
 	{
-		List<Tuple<TargetedAction, Double>> jTable = new ArrayList<Tuple<TargetedAction, Double>>();
+		Map<ActionCombination, Double> jmap = new HashMap<ActionCombination, Double>();
 		
-		return jTable;
+		List<Tuple<TargetedAction, Double>> actions = getActions(s, log, playerNum);
+		for(Tuple<TargetedAction, Double> action : actions)
+		{
+			ActionCombination ac = new ActionCombination(new Tuple<Integer, TargetedAction>(unitId, action.first));
+			jmap.put(ac, action.second);
+		}
+		
+		return new JMap(jmap);
 	}
 
 	//ranking of the enemy being attacked in terms of how close the enemy is

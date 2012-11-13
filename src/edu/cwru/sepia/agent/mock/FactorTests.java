@@ -1,6 +1,6 @@
 package edu.cwru.sepia.agent.mock;
 
-import edu.cwru.sepia.agent.Factor;
+import edu.cwru.sepia.agent.Factor2;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 
@@ -10,7 +10,9 @@ public class FactorTests {
 		LearningUnit u0 = new LearningUnit(0);
 		LearningUnit u1 = new LearningUnit(1);
 		
-		Factor f1 = new Factor((StateView)null, (HistoryView)null, 0, u0, u1);
+		Factor2 f1 = new Factor2((StateView)null, (HistoryView)null, 0, u0, u1);
+		
+		Factor2 f2;
 	}
 
 }

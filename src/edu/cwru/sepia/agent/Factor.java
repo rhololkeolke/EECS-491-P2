@@ -10,7 +10,7 @@ import edu.cwru.sepia.agent.mock.LearningUnit;
 
 public class Factor {
 	
-	private List<Tuple<TargetedAction, Double>> JTable;
+	/*private List<Tuple<TargetedAction, Double>> JTable;
 
 	// for now this method assumes that there will be at most 2 edges for every node in the graph
 	// so it only needs to accept a single agent and a single factor
@@ -45,7 +45,7 @@ public class Factor {
 		List<Tuple<TargetedAction, Double>> intermediateTable = constructJointTable(maxJTable, agentJTable);
 		
 		JTable = compressJointActionTable(maxJTable.size(), 1, intermediateTable);
-	}
+	}*/
 	
 	/* create intermediate action pair tables for each the agent
 	 * 
@@ -70,7 +70,7 @@ public class Factor {
      * and a2 will be whichever agent in agents is currently being
      * processed
      */		
-	private List<Tuple<TargetedAction, Double>> constructJointTable(List<Tuple<TargetedAction, Double>> maxTable,
+	/*private List<Tuple<TargetedAction, Double>> constructJointTable(List<Tuple<TargetedAction, Double>> maxTable,
 				List<Tuple<TargetedAction, Double>> otherTable)
 	{
 		int numActions1 = maxTable.size(); // number of actions in the max table
@@ -100,12 +100,12 @@ public class Factor {
 		}
 		
 		return jointTable;
-	}
+	}*/
 	
 	/*
 	 * Go through a table and find the maximum over the max agent
 	 */
-	private List<Tuple<TargetedAction, Double>> compressJointActionTable(int numActions, int dim, List<Tuple<TargetedAction, Double>> finalActionTable)
+	/*private List<Tuple<TargetedAction, Double>> compressJointActionTable(int numActions, int dim, List<Tuple<TargetedAction, Double>> finalActionTable)
 	{
 		// TODO Generalize this method so it works with different table sizes
 		Double[] JVals = new Double[numActions];
@@ -156,5 +156,5 @@ public class Factor {
 		// this method is supposed to return the
 		// maximum action over the actions left in the JTable
 		return null;
-	}
+	}*/
 }

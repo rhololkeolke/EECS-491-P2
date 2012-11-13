@@ -28,13 +28,18 @@ public class LearningUnit {
 		if(unitId == 0)
 		{
 
-			jmap.put(comb0, 5.0);
-			jmap.put(comb1, 3.0);
+			jmap.put(comb0, -7.0);
+			jmap.put(comb1, 10.0);
+		}
+		else if(unitId == 1)
+		{
+			jmap.put(comb0, -4.0);
+			jmap.put(comb1, 2.0);
 		}
 		else
 		{
-			jmap.put(comb0, -2.0);
-			jmap.put(comb1, 8.0);
+			jmap.put(comb0, -9.0);
+			jmap.put(comb1, -3.0);
 		}
 		
 		return jmap;

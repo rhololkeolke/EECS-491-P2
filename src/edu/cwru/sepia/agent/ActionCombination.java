@@ -1,6 +1,9 @@
 package edu.cwru.sepia.agent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -105,6 +108,29 @@ public class ActionCombination {
 		
 		return true;
 		
+	}
+	
+	public List<ActionCombination> extract(List<Integer> keys)
+	{
+		ActionCombination act1 = new ActionCombination();
+		ActionCombination act2 = new ActionCombination();
+		
+		for (Integer i:combination.keySet())
+		{
+			if (keys.contains(i))
+			{
+				act1.put(i, combination.get(i));
+			}
+			else
+			{
+				act2.put(i, combination.get(i));
+			}
+		}
+		List<ActionCombination> list = new ArrayList<ActionCombination>(2);
+		list.add(act1);
+		list.add(act2);
+		
+		return list;
 	}
 	
 	private boolean actionEqual(TargetedAction t1, TargetedAction t2)

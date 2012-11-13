@@ -13,6 +13,13 @@ public class FactorTests {
 		Factor2 f1 = new Factor2((StateView)null, (HistoryView)null, 0, u0, u1);
 		
 		Factor2 f2;
+		try {
+			f2 = f1.max(u0.unitId);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("");
 	}
 
 }

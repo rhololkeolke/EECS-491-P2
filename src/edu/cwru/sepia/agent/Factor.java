@@ -1,160 +1,193 @@
 package edu.cwru.sepia.agent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-import edu.cwru.sepia.action.TargetedAction;
+import edu.cwru.sepia.agent.mock.LearningUnit;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
-import edu.cwru.sepia.agent.mock.LearningUnit;
 
 public class Factor {
+
+	JMap jmap;
+	Map<ActionCombination, ActionCombination> maxes = null;
 	
-	/*private List<Tuple<TargetedAction, Double>> JTable;
-
-	// for now this method assumes that there will be at most 2 edges for every node in the graph
-	// so it only needs to accept a single agent and a single factor
-	public Factor(StateView s, HistoryView h, int playernum, LearningUnit max, LearningUnit agent, Factor f)
+	public Factor()
 	{
-		// stores the J values of all the possible actions for the agent currently being
-		// maximized
-		List<Tuple<TargetedAction, Double>> maxJTable = max.calcJTable(s, h, playernum);
-		
-		// get the J values of all the possible actions for the agent
-		List<Tuple<TargetedAction, Double>> agentJTable = agent.calcJTable(s, h, playernum);
-
-		List<Tuple<TargetedAction, Double>> intermediateTable1 = constructJointTable(maxJTable, agentJTable);
-		
-		List<Tuple<TargetedAction, Double>> intermediateTable2 = constructJointTable(maxJTable, f.getJTable());
-		
-		List<Tuple<TargetedAction, Double>> jointActionTable = constructJointTable(intermediateTable1, intermediateTable2);
-		
-		JTable = compressJointActionTable(maxJTable.size(), 2, jointActionTable);
-
+		jmap = new JMap();
+		maxes = new HashMap<ActionCombination, ActionCombination>();
 	}
 	
-	// this method is used when there is no factor, just a single J function
-	public Factor(StateView s, HistoryView h, int playernum, LearningUnit max, LearningUnit agent)
+	public Factor(StateView s, HistoryView h, int playerNum, LearningUnit...agents)
 	{
-		// stores the J values of all the possible actions for the agent currently being maximized
-		List<Tuple<TargetedAction, Double>> maxJTable = max.calcJTable(s, h, playernum);
+		maxes = new HashMap<ActionCombination, ActionCombination>();
 		
-		// get the J values for all the possible actions for the agent
-		List<Tuple<TargetedAction, Double>> agentJTable = agent.calcJTable(s, h, playernum);
-		
-		List<Tuple<TargetedAction, Double>> intermediateTable = constructJointTable(maxJTable, agentJTable);
-		
-		JTable = compressJointActionTable(maxJTable.size(), 1, intermediateTable);
-	}*/
-	
-	/* create intermediate action pair tables for each the agent
-	 * 
-	 * An example of an intermediate action pair table is
-	 * 
-	 * +--+--+---+
-     * |a1|a2|J12|
-     * +==+==+===+
-     * |A0|A0|4  |
-     * +--+--+---+
-     * |A0|A1|2  |
-     * +--+--+---+
-     * |A1|A0|6  |
-     * +--+--+---+
-     * |A1|A1|8  |
-     * +--+--+---+
-     * 
-     * Where the first two columns select the action for each agent
-     * and the third column is the summation of each agents J for the given actions.
-     * 
-     * It is assumed that a1 will be the agent represented by max
-     * and a2 will be whichever agent in agents is currently being
-     * processed
-     */		
-	/*private List<Tuple<TargetedAction, Double>> constructJointTable(List<Tuple<TargetedAction, Double>> maxTable,
-				List<Tuple<TargetedAction, Double>> otherTable)
-	{
-		int numActions1 = maxTable.size(); // number of actions in the max table
-		int numActions2 = otherTable.size(); // number of actions in the other table
-		Double[] jVals = new Double[numActions1*numActions2]; // stores the sum of the J values from the max table and other table
-		TargetedAction[] actions = new TargetedAction[numActions1*numActions2]; // stores the actions from the max table
-		
-		// construct the permutations and their associated
-		for(int i=0; i<numActions1; i++)
+		jmap = new JMap();
+		List<JMap> agentJMaps = new LinkedList<JMap>();
+				
+		// get all of the JMaps
+		for(LearningUnit agent : agents)
 		{
-			Tuple<TargetedAction, Double> maxElement = maxTable.get(i); // convenience variable which saves some typing
-			for(int j=0; j<numActions2; j++)
-			{
-				// get the index into the intermediate table
-				int index = i*numActions1 + j;
-				jVals[index] = maxElement.second + otherTable.get(j).second;
-				actions[index] = maxElement.first;
-			}
+			agentJMaps.add(agent.calcJMap(s, h, playerNum));
 		}
 		
-		List<Tuple<TargetedAction, Double>> jointTable = new ArrayList<Tuple<TargetedAction, Double>>(jVals.length);
-		
-		// convert the two arrays into a list of tuples
-		for(int i=0; i<jVals.length; i++)
+		// generate all of the combinations
+		List<ActionCombination> combinations = null;
+		for(JMap agentJMap : agentJMaps)
 		{
-			jointTable.add(new Tuple<TargetedAction, Double>(actions[i], jVals[i]));
+			combinations = getCombinations(agentJMap, combinations);
 		}
 		
-		return jointTable;
-	}*/
-	
-	/*
-	 * Go through a table and find the maximum over the max agent
-	 */
-	/*private List<Tuple<TargetedAction, Double>> compressJointActionTable(int numActions, int dim, List<Tuple<TargetedAction, Double>> finalActionTable)
-	{
-		// TODO Generalize this method so it works with different table sizes
-		Double[] JVals = new Double[numActions];
-		TargetedAction[] actions = new TargetedAction[numActions];
-		
-		for(int i=0; i<(int)Math.pow(numActions, dim); i++)
+		// for each combination
+		for(ActionCombination combination : combinations)
 		{
-			// find max out of possible values of max agent's action
-			JVals[i] = Double.NEGATIVE_INFINITY;
-			for(int j=0; j<numActions; j++)
+			// query the JMap for the values inside of combination
+			Double totVal = 0.0;
+			for(JMap agentJMap : agentJMaps)
 			{
-				int index = i + j*(int)Math.pow(numActions, dim);
-				if(JVals[i] < finalActionTable.get(index).second) // if found a new best number
-				{
-					// update everything
-					JVals[i] = finalActionTable.get(index).second;
-					actions[i] = finalActionTable.get(i).first;
+				try {
+					totVal += agentJMap.get(combination);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
+			jmap.put(combination, totVal);
+		}
+	}
+	
+	public Factor(StateView s, HistoryView h, int playerNum, List<LearningUnit> agents, List<Factor> factors)
+	{
+		maxes = new HashMap<ActionCombination, ActionCombination>();
+		
+		jmap = new JMap();
+		List<JMap> agentJMaps = new LinkedList<JMap>();
+		
+		// get all of the JMaps
+		for(LearningUnit agent : agents)
+		{
+			agentJMaps.add(agent.calcJMap(s, h, playerNum));
 		}
 		
-		// finally construct the final table
-		List<Tuple<TargetedAction, Double>> finalJTable = new ArrayList<Tuple<TargetedAction, Double>>(JVals.length);
-		for(int i=0; i<JVals.length; i++)
+		// generate all of the combinations
+		List<ActionCombination> combinations = null;
+		for(JMap agentJMap : agentJMaps)
 		{
-			finalJTable.add(new Tuple<TargetedAction, Double>(actions[i], JVals[i]));
+			combinations = getCombinations(agentJMap, combinations);
 		}
-		return finalJTable;
+		
+		// add all of the combinations for the factors
+		for(Factor f : factors)
+		{
+			combinations = getCombinations(f.jmap, combinations);
+		}
+		
+		// for each combination
+		for(ActionCombination combination : combinations)
+		{
+			// query the JMap for the values inside of the combination
+			Double totVal = 0.0;
+			for(JMap agentJMap : agentJMaps)
+			{
+				try {
+					totVal += agentJMap.get(combination);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			for(Factor f : factors)
+			{
+				try {
+					totVal += f.jmap.get(combination);
+					for(ActionCombination acKey : f.maxes.keySet())
+					{
+						maxes.put(combination, f.maxes.get(acKey));
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			jmap.put(combination, totVal);
+		}
 	}
 	
-	public List<Tuple<TargetedAction, Double>> getJTable()
+	
+	private List<ActionCombination> getCombinations(JMap agentJMap, List<ActionCombination> workingList)
 	{
-		return JTable;
+		List<ActionCombination> newWorkingList = new LinkedList<ActionCombination>();
+		List<ActionCombination> agentAC = agentJMap.getActionCombinationList();
+		
+		if(workingList == null)
+			return agentAC;
+		
+		for(ActionCombination ac : agentAC)
+		{
+			for(ActionCombination wac : workingList)
+				newWorkingList.add(new ActionCombination(ac, wac));
+		}
+		return newWorkingList;
 	}
 	
-	
-	
-	public void update(Factor f)
+	public Factor max(int maxId) throws Exception
 	{
-		// TODO implement this method
-		// The method is supposed to take in a factor
-		// and using that factor compress the internal table
+		List<ActionCombination> actCombs = jmap.getActionCombinationList();
+		
+		Map<ActionCombination, List<ActionCombination>> maxBins = new HashMap<ActionCombination, List<ActionCombination>>();
+		
+		List<Integer> maxKey = new ArrayList<Integer>(1);
+		maxKey.add(maxId);
+		for(ActionCombination actComb : actCombs)
+		{
+			List<ActionCombination> splitAC = actComb.extract(maxKey);
+			if(maxBins.containsKey(splitAC.get(1)))
+			{
+				List<ActionCombination> ac = maxBins.get(splitAC.get(1));
+				ac.add(splitAC.get(0));
+				maxBins.put(splitAC.get(1), ac);
+			}
+			else
+			{
+				List<ActionCombination> ac = new LinkedList<ActionCombination>();
+				ac.add(splitAC.get(0));
+				maxBins.put(splitAC.get(1), ac);
+			}
+		}
+		
+		Factor f = new Factor();
+		
+		for(ActionCombination otherAC : maxBins.keySet())
+		{
+			ActionCombination maxAC = null;
+			Double maxVal = Double.NEGATIVE_INFINITY;
+			for(ActionCombination currAC : maxBins.get(otherAC))
+			{
+				ActionCombination jMapKey = new ActionCombination(currAC, otherAC);
+				if(jmap.get(jMapKey) > maxVal)
+				{
+					maxVal = jmap.get(jMapKey);
+					ActionCombination prevMaxes = maxes.get(jMapKey);
+					if(prevMaxes == null)
+						maxAC = currAC;
+					else
+						maxAC = new ActionCombination(currAC, maxes.get(jMapKey));
+				}
+			}
+			f.jmap.put(otherAC, maxVal);
+			f.maxes.put(otherAC, maxAC);
+		}
+		
+		return f;
 	}
 	
-	public TargetedAction selectActions()
+	public ActionCombination getMaxes()
 	{
-		// TODO implement this method
-		// this method is supposed to return the
-		// maximum action over the actions left in the JTable
-		return null;
-	}*/
+		for(ActionCombination ac : maxes.keySet())
+		{
+			return maxes.get(ac);
+		}
+		return new ActionCombination();
+	}
 }

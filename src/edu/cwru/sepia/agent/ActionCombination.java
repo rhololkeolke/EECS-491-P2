@@ -144,5 +144,20 @@ public class ActionCombination {
 	{
 		return combination.size();
 	}
+	
+	public String toString()
+	{
+		StringBuilder builder = new StringBuilder();
+		builder.append(" ");
+		for(Integer key : combination.keySet())
+		{
+			builder.append(key.toString() + "=");
+			
+			TargetedAction t = combination.get(key);
+			builder.append(Integer.toString(t.getTargetId()) + ";");
+		}
+		builder.append(" ");
+		return builder.toString();
+	}
 
 }

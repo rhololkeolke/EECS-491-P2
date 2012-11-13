@@ -23,6 +23,7 @@ public class Factor2 {
 	
 	public Factor2(StateView s, HistoryView h, int playerNum, LearningUnit...agents)
 	{
+		maxes = new HashMap<ActionCombination, ActionCombination>();
 		
 		jmap = new JMap();
 		List<JMap> agentJMaps = new LinkedList<JMap>();
@@ -51,6 +52,61 @@ public class Factor2 {
 					totVal += agentJMap.get(combination);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			jmap.put(combination, totVal);
+		}
+	}
+	
+	public Factor2(StateView s, HistoryView h, int playerNum, List<LearningUnit> agents, List<Factor2> factors)
+	{
+		maxes = new HashMap<ActionCombination, ActionCombination>();
+		
+		jmap = new JMap();
+		List<JMap> agentJMaps = new LinkedList<JMap>();
+		
+		// get all of the JMaps
+		for(LearningUnit agent : agents)
+		{
+			agentJMaps.add(agent.calcJMap(s, h, playerNum));
+		}
+		
+		// generate all of the combinations
+		List<ActionCombination> combinations = null;
+		for(JMap agentJMap : agentJMaps)
+		{
+			combinations = getCombinations(agentJMap, combinations);
+		}
+		
+		// add all of the combinations for the factors
+		for(Factor2 f : factors)
+		{
+			combinations = getCombinations(f.jmap, combinations);
+		}
+		
+		// for each combination
+		for(ActionCombination combination : combinations)
+		{
+			// query the JMap for the values inside of the combination
+			Double totVal = 0.0;
+			for(JMap agentJMap : agentJMaps)
+			{
+				try {
+					totVal += agentJMap.get(combination);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			for(Factor2 f : factors)
+			{
+				try {
+					totVal += f.jmap.get(combination);
+					for(ActionCombination acKey : f.maxes.keySet())
+					{
+						maxes.put(combination, f.maxes.get(acKey));
+					}
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -112,7 +168,11 @@ public class Factor2 {
 				if(jmap.get(jMapKey) > maxVal)
 				{
 					maxVal = jmap.get(jMapKey);
-					maxAC = currAC;
+					ActionCombination prevMaxes = maxes.get(jMapKey);
+					if(prevMaxes == null)
+						maxAC = currAC;
+					else
+						maxAC = new ActionCombination(currAC, maxes.get(jMapKey));
 				}
 			}
 			f.jmap.put(otherAC, maxVal);
@@ -120,5 +180,14 @@ public class Factor2 {
 		}
 		
 		return f;
+	}
+	
+	public ActionCombination getMaxes()
+	{
+		for(ActionCombination ac : maxes.keySet())
+		{
+			return maxes.get(ac);
+		}
+		return new ActionCombination();
 	}
 }

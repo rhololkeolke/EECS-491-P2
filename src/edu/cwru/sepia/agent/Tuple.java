@@ -1,6 +1,6 @@
 package edu.cwru.sepia.agent;
 
-class Tuple<T,R>
+public class Tuple<T,R>
 {
 	public T first;
 	public R second;

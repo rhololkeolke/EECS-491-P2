@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
@@ -93,17 +94,7 @@ public class CoordinationAgent extends Agent {
 		if(isEvent())
 		{
 			
-			actions = new HashMap<Integer, Action>();
-			
-			for(Integer unitId : newstate.getUnitIds(playernum)) // for all of the units still alive
-			{
-				LearningUnit currUnit = units.get(unitId); // get the associated learning agent
-				if(currUnit != null) 
-				{
-					actions.put(currUnit.unitId, currUnit.getAction(newstate, statehistory, playernum)); // get an action for that unit
-			
-				}
-			}
+			actions = getAction(newstate, statehistory);
 			return actions;
 		}
 		else
@@ -197,8 +188,9 @@ public class CoordinationAgent extends Agent {
 	
 	private Map<Integer, Action> getAction(StateView state, HistoryView history)
 	{
+		Integer[] keys = units.keySet().toArray(new Integer[10]);
+		//Factor f1 = new Factor(state, history, playernum, units.get(keys[0]), units.get(keys[1]));
 		
-		
-		return null;
+		return new HashMap<Integer, Action>();
 	}
 }

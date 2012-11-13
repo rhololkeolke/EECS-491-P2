@@ -6,6 +6,7 @@ import java.util.List;
 import edu.cwru.sepia.action.TargetedAction;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
+import edu.cwru.sepia.agent.mock.LearningUnit;
 
 public class Factor {
 	
@@ -30,12 +31,25 @@ public class Factor {
 		
 		List<Tuple<TargetedAction, Double>> intermediateTable2 = constructIntermediateTable(maxJTable, f.getJTable());
 		
-		List<Tuple<TargetedAction, Double>> finalActionTable = constructFinalActionTable(maxJTable.size(), intermediateTable1, intermediateTable2);
+		List<Tuple<TargetedAction, Double>> jointActionTable = constructJointActionTable(maxJTable.size(), intermediateTable1, intermediateTable2);
 		
-		JTable = compressFinalActionTable(maxJTable.size(), finalActionTable);
+		JTable = compressJointActionTable(maxJTable.size(), 2, jointActionTable);
 
 	}
 	
+	// this method is used when there is no factor, just a single J function
+	public Factor(StateView s, HistoryView h, int playernum, LearningUnit max, LearningUnit agent)
+	{
+		// stores the J values of all the possible actions for the agent currently being maximized
+		List<Tuple<TargetedAction, Double>> maxJTable = max.calcJTable(s, h, playernum);
+		
+		// get the J values for all the possible actions for the agent
+		List<Tuple<TargetedAction, Double>> agentJTable = agent.calcJTable(s, h, playernum);
+		
+		List<Tuple<TargetedAction, Double>> intermediateTable = constructIntermediateTable(maxJTable, agentJTable);
+		
+		JTable = compressJointActionTable(maxJTable.size(), 1, intermediateTable);
+	}
 	
 	/* create intermediate action pair tables for each the agent
 	 * 
@@ -71,6 +85,9 @@ public class Factor {
 		// has the same number of actions)
 		List<Tuple<TargetedAction, Double>> intermediateTable = new ArrayList<Tuple<TargetedAction, Double>>(numActions*numActions);
 		
+		Double[] jVals = new Double[numActions*numActions];
+		TargetedAction[] actions = new TargetedAction[numActions*numActions];
+		
 		// think of these loops as constructing a truth table except
 		// now there may be more than actions for each agent
 		// (i.e. no longer just True and False)
@@ -81,8 +98,14 @@ public class Factor {
 			{
 				// get the index into the intermediate table
 				int index = i*numActions + j;
-				intermediateTable.add(new Tuple(a1JTable.get(i).first, maxJVal.second + a2JTable.get(j).second));
+				jVals[index] = maxJVal.second + a2JTable.get(j).second;
+				actions[index] = a1JTable.get(i).first;
 			}
+		}
+		
+		for(int i=0; i<jVals.length; i++)
+		{
+			intermediateTable.add(new Tuple<TargetedAction, Double>(actions[i], jVals[i]));
 		}
 		
 		return intermediateTable;
@@ -117,7 +140,7 @@ public class Factor {
 	 * The rest of the information can be reconstructed from the index
 	 * of J.
 	 */
-	private List<Tuple<TargetedAction, Double>> constructFinalActionTable(int numActions,
+	private List<Tuple<TargetedAction, Double>> constructJointActionTable(int numActions,
 			                                   List<Tuple<TargetedAction, Double>> table1,
 			                                   List<Tuple<TargetedAction, Double>> table2)
 	{
@@ -138,37 +161,40 @@ public class Factor {
 			}
 		}
 		
-		List<Tuple<TargetedAction, Double>> finalJTable = new ArrayList<Tuple<TargetedAction, Double>>(JVals.length);
+		List<Tuple<TargetedAction, Double>> jointJTable = new ArrayList<Tuple<TargetedAction, Double>>(JVals.length);
 		for(int i=0; i<JVals.length; i++)
 		{
 			TargetedAction action = actions[i];
-			finalJTable.add(new Tuple<TargetedAction, Double>(actions[i], JVals[i]));
+			jointJTable.add(new Tuple<TargetedAction, Double>(actions[i], JVals[i]));
 		}
-		return finalJTable;
+		return jointJTable;
 	}
 	
 	/*
-	 * Go through a table and find the maximum over the max agents
+	 * Go through a table and find the maximum over the max agent
 	 */
-	private List<Tuple<TargetedAction, Double>> compressFinalActionTable(int numActions, List<Tuple<TargetedAction, Double>> finalActionTable)
+	private List<Tuple<TargetedAction, Double>> compressJointActionTable(int numActions, int dim, List<Tuple<TargetedAction, Double>> finalActionTable)
 	{
-		Double[] JVals = new Double[numActions*numActions];
-		TargetedAction[] actions = new TargetedAction[numActions*numActions];
+		Double[] JVals = new Double[numActions];
+		TargetedAction[] actions = new TargetedAction[numActions];
 		
-		for(int i=0; i<numActions*numActions; i++)
+		for(int i=0; i<(int)Math.pow(numActions, dim); i++)
 		{
+			// find max out of possible values of max agent's action
 			JVals[i] = Double.NEGATIVE_INFINITY;
-			for(int j=0; i<numActions; i++)
+			for(int j=0; j<numActions; j++)
 			{
-				if(JVals[i] < finalActionTable.get(j*numActions*numActions).second) // if found a new bset number
+				int index = i + j*(int)Math.pow(numActions, dim);
+				if(JVals[i] < finalActionTable.get(index).second) // if found a new best number
 				{
 					// update everything
-					JVals[i] = finalActionTable.get(j*numActions*numActions).second;
-					actions[i] = finalActionTable.get(j*numActions*numActions).first;
+					JVals[i] = finalActionTable.get(index).second;
+					actions[i] = finalActionTable.get(i).first;
 				}
 			}
 		}
 		
+		// finally construct the final table
 		List<Tuple<TargetedAction, Double>> finalJTable = new ArrayList<Tuple<TargetedAction, Double>>(JVals.length);
 		for(int i=0; i<JVals.length; i++)
 		{

@@ -1,9 +1,15 @@
 package edu.cwru.sepia.agent;
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,13 +30,13 @@ public class CoordinationAgent extends Agent {
 	
 	int episodeCount = 1;
 	
-	int numEpisodes;
+	int numEpisodes = 50;
 	
 	Map<Integer, Action> actions;
 	
 	double[] cumRewards = new double[5];
 	
-	int frozenGameCount = 5; // when less than the number of slots in cumRewards units won't be updated
+	int frozenGameCount = 0; // when less than the number of slots in cumRewards units won't be updated
 	
 	FileWriter fstream;
 	BufferedWriter out;
@@ -45,15 +51,11 @@ public class CoordinationAgent extends Agent {
 		fstream = new FileWriter("learningData.csv");
 		out = new BufferedWriter(fstream);
 		
-		if(args.length < 5)
-		{
-			System.err.println("Must supply number of episodes and file path to coordination graph definition file");
-			System.exit(1);
-		}
-		else
+		if(args.length == 4)
 		{
 			numEpisodes = Integer.parseInt(args[3]);
 		}
+
 	}
 
 	@Override
@@ -72,41 +74,65 @@ public class CoordinationAgent extends Agent {
 		// create the learning units 
 		if(episodeCount == 1) // only do this for the first episode
 		{
+			FileInputStream fileIn;
+			ObjectInputStream agentIn;
+			LearningUnit myunit;
 			for(Integer unitId : newstate.getUnitIds(playernum))
 			{
+				if(new File("agents/" + unitId + ".ser").isFile())
+				{
+					try {
+						fileIn = new FileInputStream("agents/" + unitId + ".ser");
+						agentIn = new ObjectInputStream(fileIn);
+						myunit = (LearningUnit) agentIn.readObject();
+						agentIn.close();
+						fileIn.close();
+					} catch (FileNotFoundException e) {
+						myunit = new LearningUnit(unitId);
+					} catch (IOException e) {
+						myunit = new LearningUnit(unitId);
+					} catch (ClassNotFoundException e) {
+						myunit = new LearningUnit(unitId);
+					}
+				}
+				else
+				{
+					myunit = new LearningUnit(unitId);
+				}
+				
 				switch(unitId)
 				{
 				case 6:
-					f1 = new LearningUnit(unitId);
+					f1 = myunit;
 					units.put(unitId, f1);
 					break;
 				case 7:
-					f2 = new LearningUnit(unitId);
+					f2 = myunit;
 					units.put(unitId, f2);
 					break;
 				case 8:
-					f3 = new LearningUnit(unitId);
+					f3 = myunit;
 					units.put(unitId, f3);
 					break;
 				case 9:
-					a1 = new LearningUnit(unitId);
+					a1 = myunit;
 					units.put(unitId, a1);
 					break;
 				case 10:
-					a2 = new LearningUnit(unitId);
+					a2 = myunit;
 					units.put(unitId, a2);
 					break;
 				case 11:
-					b1 = new LearningUnit(unitId);
+					b1 = myunit;
 					units.put(unitId, b1);
 					break;
 				case 12:
-					b2 = new LearningUnit(unitId);
+					b2 = myunit;
 					units.put(unitId, b2);
 					break;
+				default:
+					units.put(unitId, myunit);
 				}
-				LearningUnit myunit = new LearningUnit(unitId);
-				units.put(unitId, myunit);
 			}
 		}
 		
@@ -177,7 +203,7 @@ public class CoordinationAgent extends Agent {
 		}
 		else
 		{
-			if(episodeCount % 10 == 0) // if this is the end of a frozen game run
+			if(episodeCount % 10 == 0 || episodeCount == 1) // if this is the end of a frozen game run
 			{
 				double total = 0;
 				for(int i=0; i<cumRewards.length; i++)
@@ -208,6 +234,26 @@ public class CoordinationAgent extends Agent {
 					fstream.close();
 				} catch (IOException e) {
 					e.printStackTrace();
+				}
+				
+				FileOutputStream fileOut;
+				ObjectOutputStream agentOut;
+				
+				for(Integer unitId : units.keySet())
+				{
+					try {
+						fileOut = new FileOutputStream("agents/" + unitId + ".ser");
+						agentOut = new ObjectOutputStream(fileOut);
+						agentOut.writeObject(units.get(unitId));
+						agentOut.close();
+						fileOut.close();
+					} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				
 				System.out.println(episodeCount-1 + " episodes run");

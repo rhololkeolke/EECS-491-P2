@@ -23,7 +23,7 @@ public class LearningUnit implements Serializable {
 	final double beta = .5; 
 	
 	private double temperature;
-	private double decayRate = .003;
+	private double decayRate = .3;
 	private double reward;
 	private double[] e; // eligibility trace
 	

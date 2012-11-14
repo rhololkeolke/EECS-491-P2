@@ -36,7 +36,7 @@ public class PolicyAgent extends Agent {
 	
 	double[] cumRewards = new double[5];
 	
-	int frozenGameCount = 5; // when less than the number of slots in cumRewards units won't be updated
+	int frozenGameCount = 0; // when less than the number of slots in cumRewards units won't be updated
 	
 	FileWriter fstream;
 	BufferedWriter out;
@@ -170,7 +170,7 @@ public class PolicyAgent extends Agent {
 		}
 		else
 		{
-			if(episodeCount % 10 == 0) // if this is the end of a frozen game run
+			if(episodeCount % 10 == 0 || episodeCount == 1) // if this is the end of a frozen game run
 			{
 				double total = 0;
 				for(int i=0; i<cumRewards.length; i++)

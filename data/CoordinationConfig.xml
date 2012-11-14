@@ -9,13 +9,13 @@
 			<Argument>false</Argument>
 		</AgentClass>
 	</Player>
-	<Player Id="0">
+	<!--<Player Id="0">
 		<AgentClass>
 			<ClassName>edu.cwru.sepia.agent.visual.VisualAgent</ClassName>
 			<Argument>true</Argument>
 			<Argument>false</Argument>
 		</AgentClass>
-	</Player>
+	</Player>-->
 	<Player Id="1">
 		<AgentClass>
 			<ClassName>edu.cwru.sepia.agent.CoordinationAgent</ClassName>
@@ -23,7 +23,6 @@
 			<Argument>true</Argument>
 			<Argument>false</Argument>
 			<Argument>1000</Argument><!-- Number of episodes to run -->
-			<Argument>data/coordinationGraph.txt</Argument><!-- Graph definition file -->
 		</AgentClass>
 	</Player>
 	<ModelParameters>

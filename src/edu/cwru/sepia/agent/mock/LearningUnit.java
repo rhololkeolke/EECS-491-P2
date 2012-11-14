@@ -1,5 +1,7 @@
 package edu.cwru.sepia.agent.mock;
 
+import java.io.Serializable;
+
 import edu.cwru.sepia.action.TargetedAction;
 import edu.cwru.sepia.agent.ActionCombination;
 import edu.cwru.sepia.agent.JMap;
@@ -7,7 +9,7 @@ import edu.cwru.sepia.agent.Tuple;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 
-public class LearningUnit {
+public class LearningUnit implements Serializable {
 
     int unitId;
     
@@ -28,18 +30,18 @@ public class LearningUnit {
 		if(unitId == 0)
 		{
 
-			jmap.put(comb0, -7.0);
+			jmap.put(comb0, 7.0);
 			jmap.put(comb1, 10.0);
 		}
 		else if(unitId == 1)
 		{
-			jmap.put(comb0, -4.0);
+			jmap.put(comb0, 4.0);
 			jmap.put(comb1, 2.0);
 		}
 		else
 		{
-			jmap.put(comb0, -9.0);
-			jmap.put(comb1, -3.0);
+			jmap.put(comb0, 9.0);
+			jmap.put(comb1, 3.0);
 		}
 		
 		return jmap;

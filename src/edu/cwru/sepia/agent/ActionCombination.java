@@ -10,9 +10,14 @@ import java.util.Set;
 import edu.cwru.sepia.action.TargetedAction;
 
 public class ActionCombination {
+	// this class maps agent IDs to an Attack Action
 
+	// stores the mapping
+	// e.g. a0->Attack(1)
 	Map<Integer, TargetedAction> combination;
 	
+	// create an ActionCombination from a variable length list of 
+	// Tuples containing an Integer (unitIds) and a TargetedAction (Attack actions)
 	public ActionCombination(Tuple<Integer, TargetedAction>...mappings)
 	{
 		combination = new HashMap<Integer, TargetedAction>();
@@ -23,6 +28,8 @@ public class ActionCombination {
 		}
 	}
 	
+	// Combine an existing ActionCombination with a variable length list of tuples
+	// e.g. add on the tuples to an existing ActionCombination
 	public ActionCombination(ActionCombination ac, Tuple<Integer, TargetedAction>...mappings)
 	{
 		combination = new HashMap<Integer, TargetedAction>();
@@ -38,6 +45,9 @@ public class ActionCombination {
 		}
 	}
 	
+	// Create an ActionCombination from two existing ActionCombinations
+	// i.e. merge two ActionCombination lists
+	// Note: values from ac2 are preferred over values from ac1
 	public ActionCombination(ActionCombination ac1, ActionCombination ac2)
 	{
 		combination = new HashMap<Integer, TargetedAction>();
@@ -52,16 +62,19 @@ public class ActionCombination {
 		}
 	}
 	
+	// add a mapping to the ActionCombination
 	public void put(Integer unitId, TargetedAction t)
 	{
 		combination.put(unitId, t);
 	}
 	
+	// get a set of all agent IDs in the ActionCombination instance
 	public Set<Integer> keySet()
 	{
 		return combination.keySet();
 	}
 	
+	// used to allow ActionCombination instances as keys in a Map
 	public int hashCode()
 	{
 		StringBuilder repr = new StringBuilder();
@@ -75,6 +88,9 @@ public class ActionCombination {
 		return repr.toString().hashCode();
 	}
 	
+	// Given an ActionCombination containing agent IDs
+	// remove all agentID mappings from the current ActionCombination
+	// that are not in this list
 	public ActionCombination prune(ActionCombination keep)
 	{
 		ActionCombination pruned = new ActionCombination();
@@ -87,6 +103,7 @@ public class ActionCombination {
 		return pruned;
 	}
 	
+	// used to allow ActionCombination instances as keys in a Map
 	public boolean equals(Object o)
 	{
 		if(!(o instanceof ActionCombination))
@@ -110,6 +127,7 @@ public class ActionCombination {
 		
 	}
 	
+
 	public List<ActionCombination> extract(List<Integer> keys)
 	{
 		ActionCombination act1 = new ActionCombination();

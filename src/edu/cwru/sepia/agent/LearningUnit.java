@@ -1,5 +1,6 @@
 package edu.cwru.sepia.agent;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -14,7 +15,7 @@ import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
-public class LearningUnit {
+public class LearningUnit implements Serializable {
 	
 	public final int unitId;
 	
@@ -22,6 +23,7 @@ public class LearningUnit {
 	final double beta = .5; 
 	
 	private double temperature;
+	private double decayRate = .003;
 	private double reward;
 	private double[] e; // eligibility trace
 	
@@ -184,6 +186,8 @@ public class LearningUnit {
 			e[i] = beta*e[i] + chosenF - sumF;
 		}
 		
+		temperature *= (1-decayRate);
+		
 		currentAction = chosenAction;
 		return chosenAction;
 	}
@@ -213,7 +217,7 @@ public class LearningUnit {
 	}
 
 	//ranking of the enemy being attacked in terms of how close the enemy is
-	private static class IsClosestEnemy implements Feature
+	private static class IsClosestEnemy implements Feature, Serializable
 	{
 
 		@Override
@@ -257,7 +261,7 @@ public class LearningUnit {
 	}
 	
 	//number of friendly attacking the targeted enemy
-	private static class NumFootmenAttackingEnemy implements Feature
+	private static class NumFootmenAttackingEnemy implements Feature, Serializable
 	{
 
 		@Override
@@ -285,7 +289,7 @@ public class LearningUnit {
 	}
 	
 	//the type of enemy, 0 for footmen, 1 for tower
-	private static class EnemyType implements Feature
+	private static class EnemyType implements Feature, Serializable
 	{
 
 		@Override
@@ -301,7 +305,7 @@ public class LearningUnit {
 	}
 	
 	//the distance to the closest tower, if no towers exist, a large number is returned
-	private static class ClosestTowerDistance implements Feature
+	private static class ClosestTowerDistance implements Feature, Serializable
 	{
 
 		@Override
@@ -345,7 +349,7 @@ public class LearningUnit {
 	}
 	
 	//returns 1 if the target enemy is attacking the current unit
-	private static class IsEnemyAttackingMe implements Feature
+	private static class IsEnemyAttackingMe implements Feature, Serializable
 	{
 
 		@Override
@@ -366,7 +370,7 @@ public class LearningUnit {
 	}
 	
 	//returns current unit hp by enemy unit hp
-	private static class HitPointsRatio implements Feature
+	private static class HitPointsRatio implements Feature, Serializable
 	{
 
 		@Override
@@ -384,7 +388,7 @@ public class LearningUnit {
 	}
 
 	//distance to closest ballista
-	private static class ClosestBallistaDistance implements Feature
+	private static class ClosestBallistaDistance implements Feature, Serializable
 	{
 
 		@Override

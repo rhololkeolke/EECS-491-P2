@@ -8,13 +8,15 @@ import java.util.Map;
 
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
+//import edu.cwru.sepia.agent.mock.LearningUnit;
 
 public class Factor {
 
-	JMap jmap;
-	Map<ActionCombination, ActionCombination> maxes = null;
+	JMap jmap; // maps action combinations to J values
+	Map<ActionCombination, ActionCombination> maxes = null; // keeps track of which rows come from which action combinations during the maximize steps
 	
-	public Factor(StateView s, HistoryView h, int playerNum, LearningUnit...agents)
+	// create a new Factor from a variable length list of agents
+	public Factor(StateView s, HistoryView h, int playerNum, LearningUnit...agents) throws Exception
 	{
 		maxes = new HashMap<ActionCombination, ActionCombination>();
 		
@@ -35,23 +37,32 @@ public class Factor {
 		}
 		
 		// for each combination
+		Double totVal = 0.0;
 		for(ActionCombination combination : combinations)
 		{
 			// query the JMap for the values inside of combination
-			Double totVal = 0.0;
+			Double rowVal = 0.0;
 			for(JMap agentJMap : agentJMaps)
 			{
 				try {
-					totVal += agentJMap.get(combination);
+					rowVal += agentJMap.get(combination);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			jmap.put(combination, totVal);
+			jmap.put(combination, rowVal);
+			totVal += rowVal;
+		}
+		
+		// convert row entries to probabilities
+		for(ActionCombination combination : jmap.keySet())
+		{
+			jmap.put(combination, jmap.get(combination)/totVal);
 		}
 	}
 	
+	// given a variable length list of agents and factors create a new Factor
 	public Factor(StateView s, HistoryView h, int playerNum, List<LearningUnit> agents, List<Factor> factors)
 	{
 		maxes = new HashMap<ActionCombination, ActionCombination>();
@@ -107,12 +118,16 @@ public class Factor {
 		}
 	}
 	
+	// empty Factor constructor
 	public Factor()
 	{
 		jmap = new JMap();
 		maxes = new HashMap<ActionCombination, ActionCombination>();
 	}
 	
+	// given a JMap and a list of combinations
+	// append each of the current combinations to each of the combinations in the JMap
+	// and return that new list
 	private List<ActionCombination> getCombinations(JMap agentJMap, List<ActionCombination> workingList)
 	{
 		List<ActionCombination> newWorkingList = new LinkedList<ActionCombination>();
@@ -129,6 +144,7 @@ public class Factor {
 		return newWorkingList;
 	}
 	
+	// given the id of an agent maximize over this JMap
 	public Factor max(int maxId) throws Exception
 	{
 		List<ActionCombination> actCombs = jmap.getActionCombinationList();
@@ -180,6 +196,9 @@ public class Factor {
 		return f;
 	}
 	
+	// simply return the first maxes entry in the maxes Map
+	// this is expected to be used only after the factor has
+	// had all agents maximized out
 	public ActionCombination getMaxes()
 	{
 		for(ActionCombination ac : maxes.keySet())
@@ -187,5 +206,19 @@ public class Factor {
 			return maxes.get(ac);
 		}
 		return new ActionCombination();
+	}
+	
+	public ActionCombination selectAction() throws Exception
+	{
+		double selection = Math.random();
+		ActionCombination ac = null;
+		for(ActionCombination combination : jmap.keySet())
+		{
+			ac = combination;
+			selection -= jmap.get(combination);
+			if(selection <= 0)
+				return combination;
+		}
+		return ac;
 	}
 }

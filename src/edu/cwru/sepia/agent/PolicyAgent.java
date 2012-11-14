@@ -1,14 +1,22 @@
 package edu.cwru.sepia.agent;
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
+import edu.cwru.sepia.environment.model.history.DeathLog;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 
@@ -20,7 +28,8 @@ public class PolicyAgent extends Agent {
 	
 	int episodeCount = 1;
 	
-	int numEpisodes;
+	int numEpisodes = 50;
+	boolean loadAgents = false;
 	
 	Map<Integer, Action> actions;
 	
@@ -40,8 +49,9 @@ public class PolicyAgent extends Agent {
 		
 		if(args.length < 4)
 			numEpisodes = 50;
-		else
+		else if(args.length == 4)
 			numEpisodes = Integer.parseInt(args[3]);
+
 	}
 
 	@Override
@@ -60,9 +70,31 @@ public class PolicyAgent extends Agent {
 		// create the learning units 
 		if(episodeCount == 1) // only do this for the first episode
 		{
+			FileInputStream fileIn;
+			ObjectInputStream agentIn;
+			LearningUnit myunit;
 			for(Integer unitId : newstate.getUnitIds(playernum))
 			{
-				LearningUnit myunit = new LearningUnit(unitId);
+				if(new File("agents/" + unitId + ".ser").isFile())
+				{
+					try {
+						fileIn = new FileInputStream("agents/" + unitId + ".ser");
+						agentIn = new ObjectInputStream(fileIn);
+						myunit = (LearningUnit) agentIn.readObject();
+						agentIn.close();
+						fileIn.close();
+					} catch (FileNotFoundException e) {
+						myunit = new LearningUnit(unitId);
+					} catch (IOException e) {
+						myunit = new LearningUnit(unitId);
+					} catch (ClassNotFoundException e) {
+						myunit = new LearningUnit(unitId);
+					}
+				}
+				else
+				{
+					myunit = new LearningUnit(unitId);
+				}
 				units.put(unitId, myunit);
 			}
 		}
@@ -90,7 +122,7 @@ public class PolicyAgent extends Agent {
 		
 		// if this is an event step
 		// then select new actions
-		if(isEvent())
+		if(isEvent(newstate, statehistory))
 		{
 			
 			actions = new HashMap<Integer, Action>();
@@ -171,6 +203,26 @@ public class PolicyAgent extends Agent {
 				}
 				
 				System.out.println(episodeCount-1 + " episodes run");
+				
+				FileOutputStream fileOut;
+				ObjectOutputStream agentOut;
+				
+				for(Integer unitId : units.keySet())
+				{
+					try {
+						fileOut = new FileOutputStream("agents/" + unitId + ".ser");
+						agentOut = new ObjectOutputStream(fileOut);
+						agentOut.writeObject(units.get(unitId));
+						agentOut.close();
+						fileOut.close();
+					} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				System.exit(0);
 			}
 		}
@@ -197,9 +249,14 @@ public class PolicyAgent extends Agent {
 
 	}
 	
-	private boolean isEvent()
+	private boolean isEvent(StateView state, HistoryView history)
 	{
-		int eventTimeout = 10; // max number of turns before new "event"
+		int eventTimeout = 5; // max number of turns before new "event"
+		
+		// if a death occured then select new actions
+		List<DeathLog> death = history.getDeathLogs(state.getTurnNumber()-1);
+		if(death.size() > 0)
+			return true;
 		
 		if(turnCount % eventTimeout == 0)
 			return true;

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.cwru.sepia.action.Action;
+import edu.cwru.sepia.environment.model.history.DamageLog;
 import edu.cwru.sepia.environment.model.history.DeathLog;
 import edu.cwru.sepia.environment.model.history.History.HistoryView;
 import edu.cwru.sepia.environment.model.state.State.StateView;
@@ -251,11 +252,16 @@ public class PolicyAgent extends Agent {
 	
 	private boolean isEvent(StateView state, HistoryView history)
 	{
-		int eventTimeout = 5; // max number of turns before new "event"
+		int eventTimeout = 3; // max number of turns before new "event"
 		
 		// if a death occured then select new actions
 		List<DeathLog> death = history.getDeathLogs(state.getTurnNumber()-1);
 		if(death.size() > 0)
+			return true;
+		
+		// if damage occurred
+		List<DamageLog> damage = history.getDamageLogs(state.getTurnNumber()-1);
+		if(damage.size() > 0)
 			return true;
 		
 		if(turnCount % eventTimeout == 0)
